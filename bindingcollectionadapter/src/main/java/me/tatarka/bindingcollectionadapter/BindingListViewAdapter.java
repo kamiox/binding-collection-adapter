@@ -20,10 +20,16 @@ import java.util.List;
  * changes to that list.
  */
 public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCollectionAdapter<T> {
+
+    protected static final int PIVOT = 1;
+
     @NonNull
     private final ItemViewArg<T> itemViewArg;
     @Nullable
     private ItemView dropDownItemView;
+    @Nullable
+    private ItemView dropDownHintView;
+
     @NonNull
     private final WeakReferenceOnListChangedCallback<T> callback = new WeakReferenceOnListChangedCallback<>(this);
     private List<T> items;
@@ -50,6 +56,10 @@ public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCol
      */
     public void setDropDownItemView(@Nullable ItemView itemView) {
         this.dropDownItemView = itemView;
+    }
+
+    public void setDropDownHintView(@Nullable ItemView itemView) {
+        this.dropDownHintView = itemView;
     }
 
     @Override
@@ -106,12 +116,19 @@ public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCol
 
     @Override
     public int getCount() {
-        return items == null ? 0 : items.size();
+        int count = items == null ? 0 : items.size();
+        if(dropDownHintView == null) {
+            return count;
+        }
+        return count == 0 ? 0 : count + PIVOT;
     }
 
     @Override
     public T getItem(int position) {
-        return items.get(position);
+        if(dropDownHintView == null) {
+            return items.get(position);
+        }
+        return position == 0 ? null : items.get(position);
     }
 
     @Override
@@ -121,6 +138,9 @@ public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCol
 
     @Override
     public boolean isEnabled(int position) {
+        if(dropDownHintView != null && position == 0) {
+            return false;
+        }
         return itemIsEnabled == null || itemIsEnabled.isEnabled(position, items.get(position));
     }
 
@@ -128,6 +148,21 @@ public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCol
     public final View getView(int position, View convertView, @NonNull ViewGroup parent) {
         if (inflater == null) {
             inflater = LayoutInflater.from(parent.getContext());
+        }
+
+        if(dropDownHintView != null) {
+            if(position == 0) {
+                int layoutRes = dropDownHintView.layoutRes();
+                ViewDataBinding binding;
+                if (convertView == null) {
+                    binding = onCreateBinding(inflater, layoutRes, parent);
+                    binding.getRoot().setTag(binding);
+                } else {
+                    binding = (ViewDataBinding) convertView.getTag();
+                }
+                return binding.getRoot();
+            }
+            position -= PIVOT;
         }
 
         int viewType = getItemViewType(position);
@@ -153,12 +188,19 @@ public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCol
             inflater = LayoutInflater.from(parent.getContext());
         }
 
+        if(dropDownHintView != null) {
+            if(position == 0) {
+                return new View(parent.getContext());
+            }
+            position -= PIVOT;
+        }
+
         if (dropDownItemView == null) {
             return super.getDropDownView(position, convertView, parent);
         } else {
             int layoutRes = dropDownItemView.layoutRes();
             ViewDataBinding binding;
-            if (convertView == null) {
+            if (convertView == null || convertView.getTag() == null) {
                 binding = onCreateBinding(inflater, layoutRes, parent);
                 binding.getRoot().setTag(binding);
             } else {
@@ -174,6 +216,12 @@ public class BindingListViewAdapter<T> extends BaseAdapter implements BindingCol
 
     @Override
     public int getItemViewType(int position) {
+        if(dropDownHintView != null) {
+            if(position == 0) {
+                return 0;
+            }
+            position -= PIVOT;
+        }
         ensureLayoutsInit();
         T item = items.get(position);
         itemViewArg.select(position, item);

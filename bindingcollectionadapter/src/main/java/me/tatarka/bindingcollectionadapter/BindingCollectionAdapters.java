@@ -16,8 +16,8 @@ import me.tatarka.bindingcollectionadapter.factories.BindingViewPagerAdapterFact
 public class BindingCollectionAdapters {
     // AdapterView
     @SuppressWarnings("unchecked")
-    @BindingAdapter(value = {"itemView", "items", "adapter", "dropDownItemView", "itemIds", "itemIsEnabled"}, requireAll = false)
-    public static <T> void setAdapter(AdapterView adapterView, ItemViewArg<T> arg, List<T> items, BindingAdapterViewFactory factory, ItemView dropDownItemView, BindingListViewAdapter.ItemIds<T> itemIds, BindingListViewAdapter.ItemIsEnabled<T> itemIsEnabled) {
+    @BindingAdapter(value = {"itemView", "items", "adapter", "dropDownItemView", "dropDownHintView", "itemIds", "itemIsEnabled"}, requireAll = false)
+    public static <T> void setAdapter(AdapterView adapterView, ItemViewArg<T> arg, List<T> items, BindingAdapterViewFactory factory, ItemView dropDownItemView, ItemView dropDownHintView, BindingListViewAdapter.ItemIds<T> itemIds, BindingListViewAdapter.ItemIsEnabled<T> itemIsEnabled) {
         if (arg == null) {
             throw new IllegalArgumentException("itemView must not be null");
         }
@@ -29,6 +29,7 @@ public class BindingCollectionAdapters {
             adapter = factory.create(adapterView, arg);
             adapterView.setAdapter(adapter);
         }
+        adapter.setDropDownHintView(dropDownHintView);
         adapter.setDropDownItemView(dropDownItemView);
         adapter.setItems(items);
         adapter.setItemIds(itemIds);
